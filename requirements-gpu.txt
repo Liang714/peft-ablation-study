@@ -1,0 +1,9 @@
+# CUDA-only extras. Install ONLY on a real GPU machine (Colab/Kaggle), in addition to
+# requirements.txt — never on a Mac/CPU-only machine (no wheels exist there, install will fail).
+#
+#   pip install -r requirements.txt -r requirements-gpu.txt
+#
+# bitsandbytes powers 4-bit NF4 quantization for QLoRA (configs/qlora.yaml, Step 6) — nothing
+# else in this project needs it. Not pinned exactly (unlike requirements.txt's core ML stack):
+# untestable locally (no CUDA on this Mac), so there's no locally-validated version to pin to.
+bitsandbytes>=0.43

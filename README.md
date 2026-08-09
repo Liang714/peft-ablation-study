@@ -32,11 +32,21 @@ in training/eval scripts.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
+
+# Two SEPARATE pip commands, in this order — not `-r requirements-tracking.txt -r requirements.txt`
+# on one command. mlflow declares pyarrow<21, datasets declares pyarrow>=21: a genuine conflict
+# between those two packages' own dependencies. Installing mlflow first (its own command) lets it
+# pull its preferred pyarrow; requirements.txt then upgrades pyarrow for datasets afterward. Doing
+# both in one command makes pip jointly resolve the conflicting constraints and fail outright.
+pip install -r requirements-tracking.txt
 pip install -r requirements.txt
 # If a source build fails (e.g. `cryptography` needing a Rust toolchain — happens when the
 # venv's Python is x86_64 running under Rosetta on Apple Silicon, check with
-# `file $(which python3)`), retry with: pip install --only-binary :all: -r requirements.txt
-pytest  # should pass: config-loading + data-pipeline + evaluation-metric tests (37 as of Step 3)
+# `file $(which python3)`), retry either command with: pip install --only-binary :all: -r <file>
+# requirements-gpu.txt (bitsandbytes, for QLoRA/Step 6 only) is CUDA-only — install it in addition
+# ONLY on a real GPU machine (Colab/Kaggle), never here (no macOS wheels exist, it'll fail).
+
+pytest  # should pass: config-loading + data-pipeline + evaluation-metric + training-pipeline tests (50 as of Step 4)
 
 # Regenerate data/splits/*.jsonl + data/processed/dataset_stats.json from scratch:
 PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml

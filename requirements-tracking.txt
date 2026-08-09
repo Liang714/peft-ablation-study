@@ -1,0 +1,14 @@
+# Experiment tracking (local, no account needed — keeps this at $0).
+#
+# MUST be installed as its OWN separate `pip install` command, BEFORE
+# requirements.txt — see the note there for why (mlflow declares pyarrow<21,
+# datasets declares pyarrow>=21; installing mlflow first lets it pull its own
+# preferred pyarrow, which requirements.txt then correctly upgrades
+# afterward — verified working in that exact order). This has to be two
+# separate invocations, not `-r requirements-tracking.txt -r requirements.txt`
+# on one command — pip resolves multiple -r files on a single command line
+# jointly, which hits the same unresolvable conflict:
+#
+#   pip install -r requirements-tracking.txt
+#   pip install -r requirements.txt
+mlflow==3.1.4
