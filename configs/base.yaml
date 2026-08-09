@@ -1,0 +1,65 @@
+# Shared defaults, merged with (and overridden by) every method-specific
+# config in this directory. See src/config.py for the schema these keys map
+# to — an unknown key here or in a method file raises an error rather than
+# being silently ignored.
+
+seed: 42
+
+model:
+  name: "Qwen/Qwen2.5-0.5B-Instruct"   # chosen to comfortably fit FULL fine-tuning
+  max_seq_len: 512                     # on a single free-tier T4 (~15GB VRAM)
+  trust_remote_code: false
+
+data:
+  dataset_name: "databricks/databricks-dolly-15k"
+  dataset_categories: ["closed_qa", "information_extraction"]
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  splits_dir: "data/splits"
+  train_frac: 0.8
+  val_frac: 0.1
+  test_frac: 0.1
+
+# Fixed compute budget: total training tokens seen, held identical across
+# EVERY run (full fine-tune, all 4 LoRA ranks, QLoRA). Chosen over gpu_hours
+# because it's deterministic regardless of which GPU a free-tier session
+# happens to hand out — important since Colab/Kaggle don't guarantee a fixed
+# card. total_tokens below is a PROVISIONAL estimate; it gets recalibrated
+# against the real tokenized-dataset stats at the end of Step 2 before any
+# training (Step 4) begins.
+compute_budget:
+  definition: "total_tokens"
+  total_tokens: 2000000
+
+# Fixed forgetting benchmark, run identically before AND after every single
+# fine-tuning run (not just once at the end — see Step 7).
+forgetting_eval:
+  benchmark: "cais/mmlu"
+  sample_size: 150
+  sampling_strategy: "stratified_all_subjects"   # ~2-3 questions per subject across all 57
+  seed: 42
+
+logging:
+  backend: "mlflow"       # local + free, no account needed
+  experiment_name: "peft-ablation-study"
+  run_name_template: "method={method}_seed={seed}"
+  tracking_uri: "./mlruns"
+
+checkpoint_dir: "checkpoints"
+results_dir: "results"
+
+# Shared training defaults — method configs override method, learning_rate,
+# per_device_train_batch_size, gradient_accumulation_steps (these differ
+# meaningfully between full fine-tune and PEFT methods).
+training:
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  lr_scheduler_type: "cosine"
+  gradient_checkpointing: true
+  optim: "adamw_torch"
+  bf16: true
+  fp16: false
+  logging_steps: 10
+  eval_strategy: "steps"
+  eval_steps: 50
+  save_strategy: "no"

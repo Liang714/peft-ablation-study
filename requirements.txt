@@ -1,0 +1,25 @@
+# Core ML stack
+torch>=2.1
+transformers>=4.44
+peft>=0.12
+bitsandbytes>=0.43   # NF4 quantization for QLoRA — requires CUDA (Colab/Kaggle GPU runtime)
+datasets>=2.20
+accelerate>=0.33
+evaluate>=0.4
+
+# Experiment tracking (local, no account needed — keeps this at $0)
+mlflow>=2.14
+
+# Config / utils
+pyyaml>=6.0
+numpy>=1.26
+
+# Metrics
+scikit-learn>=1.5
+
+# Testing
+pytest>=8.0
+
+# Inference endpoint (Step 9 — listed now so requirements.txt stays complete/reproducible)
+fastapi>=0.111
+uvicorn>=0.30

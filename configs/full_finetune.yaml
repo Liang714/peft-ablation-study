@@ -1,0 +1,16 @@
+# Full fine-tuning baseline — every parameter trainable, no adapters,
+# no quantization. Most memory-hungry run; this is what sized the base model.
+
+run_name: "full_finetune"
+
+training:
+  method: "full_finetune"
+  learning_rate: 2.0e-5
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+
+lora:
+  enabled: false
+
+quantization:
+  enabled: false
