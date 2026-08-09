@@ -1,0 +1,47 @@
+{
+  "split_sizes": {
+    "train": 2506,
+    "val": 313,
+    "test": 314
+  },
+  "category_distribution": {
+    "train": {
+      "closed_qa": 1376,
+      "information_extraction": 1130
+    },
+    "val": {
+      "closed_qa": 164,
+      "information_extraction": 149
+    },
+    "test": {
+      "information_extraction": 148,
+      "closed_qa": 166
+    }
+  },
+  "token_stats": {
+    "train": {
+      "count": 2506,
+      "mean": 317.0,
+      "median": 268.0,
+      "min": 55,
+      "max": 1018,
+      "total": 794426
+    },
+    "val": {
+      "count": 313,
+      "mean": 316.8,
+      "median": 282,
+      "min": 76,
+      "max": 1021,
+      "total": 99158
+    },
+    "test": {
+      "count": 314,
+      "mean": 321.8,
+      "median": 276.0,
+      "min": 64,
+      "max": 978,
+      "total": 101057
+    }
+  }
+}

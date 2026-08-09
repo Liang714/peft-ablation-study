@@ -7,7 +7,11 @@ seed: 42
 
 model:
   name: "Qwen/Qwen2.5-0.5B-Instruct"   # chosen to comfortably fit FULL fine-tuning
-  max_seq_len: 512                     # on a single free-tier T4 (~15GB VRAM)
+  max_seq_len: 1024                    # on a single free-tier T4 (~15GB VRAM).
+  # Covers ~96% of the real train-split token-length distribution (p95=878,
+  # measured in Step 2 with this model's own chat template). Examples longer
+  # than this are DROPPED (not truncated) by scripts/prepare_data.py, so no
+  # training example ever has its response silently cut off.
   trust_remote_code: false
 
 data:
@@ -24,12 +28,12 @@ data:
 # EVERY run (full fine-tune, all 4 LoRA ranks, QLoRA). Chosen over gpu_hours
 # because it's deterministic regardless of which GPU a free-tier session
 # happens to hand out — important since Colab/Kaggle don't guarantee a fixed
-# card. total_tokens below is a PROVISIONAL estimate; it gets recalibrated
-# against the real tokenized-dataset stats at the end of Step 2 before any
-# training (Step 4) begins.
+# card. FINALIZED in Step 2 against the real tokenized train split (2,506
+# examples / 794,426 tokens/epoch after length-filtering to max_seq_len=1024,
+# see data/processed/dataset_stats.json): 3 epochs equivalent = 2,383,278.
 compute_budget:
   definition: "total_tokens"
-  total_tokens: 2000000
+  total_tokens: 2383278
 
 # Fixed forgetting benchmark, run identically before AND after every single
 # fine-tuning run (not just once at the end — see Step 7).

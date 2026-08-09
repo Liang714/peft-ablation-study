@@ -4,7 +4,7 @@ A controlled, reproducible comparison of full fine-tuning, LoRA (rank sweep), an
 on a domain instruction/QA task under a **fixed compute budget**, measuring task
 accuracy, catastrophic forgetting, training cost, and inference latency/memory.
 
-> Status: Step 1 (repo scaffold) complete. This README grows with each build step;
+> Status: Step 2 (data pipeline) complete. This README grows with each build step;
 > the full write-up (methodology, results, plots, limitations) is finalized in Step 10.
 
 ## Locked decisions
@@ -18,7 +18,8 @@ to lock in model/dataset/budget choices up front:
 | Base model | `Qwen/Qwen2.5-0.5B-Instruct` | Small enough that **full fine-tuning** (the most memory-hungry run: fp16/bf16 weights + gradients + fp32 Adam states) fits in ~15GB with headroom for activations. |
 | Task dataset | `databricks/databricks-dolly-15k`, filtered to `closed_qa` + `information_extraction` categories | Established, permissively-licensed instruction dataset; these two categories have answers with a clear right answer, making EM/F1 scoring tractable — lower risk than authoring a new domain dataset from scratch. |
 | Forgetting benchmark | `cais/mmlu`, ~150-question subset, stratified across all 57 subjects, fixed seed | Broadest coverage of "general knowledge" so a forgetting claim isn't resting on one narrow subject area; small enough to run before AND after every single fine-tuning run (Step 7 requires this repeatedly, not once). |
-| Fixed compute budget definition | Total training tokens seen (identical across every run) | Deterministic and reproducible regardless of which GPU a free-tier session hands out, unlike wall-clock GPU-hours. Provisional value: 2,000,000 tokens/run (`configs/base.yaml`) — recalibrated against real tokenized-dataset stats at the end of Step 2, before Step 4 training begins. |
+| Fixed compute budget definition | Total training tokens seen (identical across every run) | Deterministic and reproducible regardless of which GPU a free-tier session hands out, unlike wall-clock GPU-hours. **Finalized value: 2,383,278 tokens/run** (`configs/base.yaml`) = 3 epochs over the real, length-filtered train split (2,506 examples / 794,426 tokens/epoch) — see Step 2 below. |
+| Model max sequence length | 1024 tokens (`configs/base.yaml` `model.max_seq_len`) | The real tokenized train split (measured with the target model's own chat template) has p95=878, max=4344. 512 would've truncated 16-19% of examples — risking silently cutting off the assistant's actual answer for long-context rows. 1024 covers ~96%; the remaining long-tail examples are **dropped, not truncated**, so no training example is ever corrupted by truncation. |
 
 ## Repo structure
 
@@ -32,7 +33,10 @@ in training/eval scripts.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest  # should pass: config loading tests
+pytest  # should pass: config-loading + data-pipeline tests (22 as of Step 2)
+
+# Regenerate data/splits/*.jsonl + data/processed/dataset_stats.json from scratch:
+PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml
 ```
 
 ## Build log
@@ -40,7 +44,34 @@ pytest  # should pass: config loading tests
 - **Step 1 (done):** Repo scaffold, `requirements.txt`, config system (`src/config.py`,
   YAML → dataclasses, base + method-override merge), seed utility (`src/seed.py`),
   logging setup, stub CLI entry points (`scripts/{prepare_data,train,evaluate}.py`).
-- **Step 2:** Data pipeline — pending.
+- **Step 2 (done):** Data pipeline (`src/data/`, run via `scripts/prepare_data.py --config configs/<any_method>.yaml`).
+  Pipeline: load `databricks/databricks-dolly-15k` → filter to `closed_qa`+`information_extraction`
+  (15,011 → 3,279 rows) → clean (strip whitespace, drop empty instruction/response) → deduplicate by
+  `(instruction, context)` (dropped 15 exact duplicates) → **length-filter**: drop (not truncate)
+  examples whose real chat-templated token count exceeds `model.max_seq_len=1024` (dropped 131 rows,
+  4.0%) → seeded 80/10/10 split.
+
+  **Final dataset:** 3,133 examples → **train=2,506 / val=313 / test=314**.
+  Category distribution (train): `closed_qa=1376, information_extraction=1130` (roughly balanced,
+  consistent across all 3 splits — see `data/processed/dataset_stats.json` for the full per-split
+  breakdown, including token-length stats).
+  Train-split token stats (Qwen2.5-0.5B-Instruct chat template): mean=317, median=268, min=55, max=1018,
+  **total=794,426 tokens/epoch** — this is what the finalized `compute_budget.total_tokens` (above) is
+  calibrated against.
+
+  **Leakage check output (required by project brief — logged here, not just in code):**
+  `Leakage check passed: no (instruction, context) pair appears in more than one split.`
+  (`train_val_overlap=0, train_test_overlap=0, val_test_overlap=0` — see `src/data/leakage.py`,
+  enforced as a hard failure in `scripts/prepare_data.py` via `assert_no_leakage()`, and covered by
+  `tests/test_data.py::test_leakage_check_detects_train_test_overlap` /
+  `test_leakage_check_detects_val_test_overlap`, which plant a leaked example and assert the checker
+  catches it — i.e. these tests would fail if leakage detection regressed.)
+
+  Preprocessing decisions: dedup/length-filter happen **before** the split (so leakage can't be
+  introduced by construction), with the leakage check as an independent second line of defense against
+  future refactors. Long examples are dropped rather than truncated to avoid corrupting the training
+  signal (see the max_seq_len row above). Regenerate everything with:
+  `PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml`.
 - **Step 3:** Baseline (no fine-tuning) eval — pending.
 - **Step 4:** Full fine-tuning run — pending.
 - **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending.

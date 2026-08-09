@@ -10,6 +10,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/dataset_stats.json
 data/splits/*
 !data/splits/.gitkeep
 checkpoints/*
