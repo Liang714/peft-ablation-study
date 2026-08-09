@@ -93,7 +93,9 @@ class QuantizationConfig:
     enabled: bool = False
     load_in_4bit: bool = False
     bnb_4bit_quant_type: str = "nf4"
-    bnb_4bit_compute_dtype: str = "bfloat16"
+    # No bnb_4bit_compute_dtype field here deliberately — same reasoning as TrainingConfig's
+    # missing bf16/fp16: resolved at runtime from actual GPU capability (resolve_dtype), since a
+    # static "bfloat16" here would be wrong on Colab's free-tier T4.
     bnb_4bit_use_double_quant: bool = True
 
 
@@ -108,8 +110,10 @@ class TrainingConfig:
     lr_scheduler_type: str = "cosine"
     gradient_checkpointing: bool = True
     optim: str = "adamw_torch"
-    bf16: bool = True
-    fp16: bool = False
+    # No bf16/fp16 field here deliberately: mixed-precision dtype is resolved at runtime from
+    # actual hardware capability (src/models/loader.py's resolve_dtype), not a config choice —
+    # Colab's free-tier T4 doesn't support bf16 despite being a CUDA device, so a static config
+    # flag here would be actively wrong on exactly the GPU this project runs on.
     logging_steps: int = 10
     eval_strategy: str = "steps"
     eval_steps: int = 50

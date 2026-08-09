@@ -71,8 +71,8 @@ training:
   lr_scheduler_type: "cosine"
   gradient_checkpointing: true
   optim: "adamw_torch"
-  bf16: true
-  fp16: false
+  # bf16/fp16 intentionally not configured here — resolved at runtime from actual GPU capability
+  # (src/models/loader.py's resolve_dtype). See src/config.py's TrainingConfig for why.
   logging_steps: 10
   eval_strategy: "steps"
   eval_steps: 50

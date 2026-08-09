@@ -10,18 +10,18 @@ from __future__ import annotations
 import logging
 
 from src.config import ExperimentConfig
-from src.models.loader import resolve_device
+from src.models.loader import resolve_device, resolve_dtype
 
 logger = logging.getLogger(__name__)
 
 
 def build_model_for_training(cfg: ExperimentConfig):
-    import torch
     from transformers import AutoModelForCausalLM
 
     method = cfg.training.method
     device = resolve_device("auto")
-    logger.info("Building model for training: method=%s device=%s", method, device)
+    dtype = resolve_dtype(device)  # bf16 only if the actual GPU supports it (e.g. NOT T4) — see resolve_dtype
+    logger.info("Building model for training: method=%s device=%s dtype=%s", method, device, dtype)
 
     if method == "qlora":
         if device != "cuda":
@@ -31,10 +31,13 @@ def build_model_for_training(cfg: ExperimentConfig):
             )
         from transformers import BitsAndBytesConfig
 
+        # bnb_4bit_compute_dtype uses the same hardware-resolved dtype as everything else here,
+        # NOT cfg.quantization.bnb_4bit_compute_dtype directly (that config value documents intent
+        # — prefer bf16 — but Turing GPUs like Colab's free-tier T4 can't actually do bf16).
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=cfg.quantization.load_in_4bit,
             bnb_4bit_quant_type=cfg.quantization.bnb_4bit_quant_type,
-            bnb_4bit_compute_dtype=getattr(torch, cfg.quantization.bnb_4bit_compute_dtype),
+            bnb_4bit_compute_dtype=dtype,
             bnb_4bit_use_double_quant=cfg.quantization.bnb_4bit_use_double_quant,
         )
         model = AutoModelForCausalLM.from_pretrained(
@@ -47,7 +50,6 @@ def build_model_for_training(cfg: ExperimentConfig):
 
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=cfg.training.gradient_checkpointing)
     else:
-        dtype = torch.bfloat16 if device == "cuda" else torch.float32
         model = AutoModelForCausalLM.from_pretrained(
             cfg.model.name,
             dtype=dtype,
@@ -82,4 +84,4 @@ def build_model_for_training(cfg: ExperimentConfig):
     else:
         raise ValueError(f"Unknown training.method: {method!r} (expected full_finetune | lora | qlora)")
 
-    return model, device
+    return model, device, dtype

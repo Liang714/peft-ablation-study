@@ -22,5 +22,6 @@ quantization:
   enabled: true
   load_in_4bit: true
   bnb_4bit_quant_type: "nf4"
-  bnb_4bit_compute_dtype: "bfloat16"
+  # compute dtype not configured here — auto-resolved from actual GPU capability at runtime
+  # (Colab's free-tier T4 doesn't support bf16 despite being CUDA; see src/models/loader.py)
   bnb_4bit_use_double_quant: true

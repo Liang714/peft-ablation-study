@@ -34,7 +34,7 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
     train_ds = build_tokenized_dataset(train_examples, tokenizer, cfg.model.max_seq_len)
     val_ds = build_tokenized_dataset(val_examples, tokenizer, cfg.model.max_seq_len)
 
-    model, device = build_model_for_training(cfg)
+    model, device, dtype = build_model_for_training(cfg)
 
     max_steps, epochs_equivalent = compute_max_steps(cfg, len(train_ds))
     if max_steps_override is not None:
@@ -64,8 +64,12 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
         lr_scheduler_type=cfg.training.lr_scheduler_type,
         gradient_checkpointing=False,  # already enabled directly on the model in model_setup.py when requested
         optim=cfg.training.optim,
-        bf16=cfg.training.bf16 and device == "cuda",
-        fp16=cfg.training.fp16 and device == "cuda",
+        # bf16/fp16 flags match the model's actual dtype (resolved in build_model_for_training
+        # from real hardware capability, e.g. Colab's T4 doesn't support bf16 despite being CUDA)
+        # rather than cfg.training.bf16/fp16 directly — those config values express intent, not
+        # what the GPU can actually do.
+        bf16=dtype == torch.bfloat16,
+        fp16=dtype == torch.float16,
         logging_steps=cfg.training.logging_steps,
         eval_strategy=cfg.training.eval_strategy,
         eval_steps=cfg.training.eval_steps,

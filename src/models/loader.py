@@ -31,6 +31,23 @@ def resolve_device(preference: str) -> str:
     return "cpu"
 
 
+def resolve_dtype(device: str):
+    """bf16 requires Ampere or newer (compute capability >= 8.0) — Colab's
+    free-tier T4 is Turing (7.5) and does NOT support it in hardware. Using
+    torch.bfloat16 unconditionally on any CUDA device (what this project did
+    until this was caught) risks a crash or silent, badly degraded
+    performance on exactly the GPU this project is meant to run on. Always
+    check torch.cuda.is_bf16_supported() rather than assuming."""
+    import torch
+
+    if device != "cuda":
+        return torch.float32
+    if torch.cuda.is_bf16_supported():
+        return torch.bfloat16
+    logger.info("CUDA device does not support bf16 (e.g. T4/Turing) — using fp16 instead")
+    return torch.float16
+
+
 def is_adapter_checkpoint(checkpoint_path: Optional[str]) -> bool:
     """A LoRA/QLoRA checkpoint has an adapter_config.json (PEFT's marker
     file); a full fine-tune checkpoint doesn't (it's a complete model).
@@ -77,7 +94,7 @@ def load_model_and_tokenizer(
 
     is_adapter = is_adapter_checkpoint(checkpoint_path)
     is_full_checkpoint = checkpoint_path is not None and not is_adapter
-    dtype = torch.bfloat16 if device == "cuda" else torch.float32
+    dtype = resolve_dtype(device)
     already_placed = False  # set True once device_map="auto" (quantized loads) has placed the model itself
 
     if is_full_checkpoint:
@@ -89,10 +106,13 @@ def load_model_and_tokenizer(
         from peft import PeftModel
         from transformers import BitsAndBytesConfig
 
+        # bnb_4bit_compute_dtype resolved from actual hardware capability (see resolve_dtype),
+        # NOT taken from cfg.quantization.bnb_4bit_compute_dtype directly — that config value
+        # documents the intent (prefer bf16) but T4/Turing GPUs can't actually do it.
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=cfg.quantization.load_in_4bit,
             bnb_4bit_quant_type=cfg.quantization.bnb_4bit_quant_type,
-            bnb_4bit_compute_dtype=getattr(torch, cfg.quantization.bnb_4bit_compute_dtype),
+            bnb_4bit_compute_dtype=dtype,
             bnb_4bit_use_double_quant=cfg.quantization.bnb_4bit_use_double_quant,
         )
         base_model = AutoModelForCausalLM.from_pretrained(
