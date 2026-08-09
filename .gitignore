@@ -17,6 +17,11 @@ data/processed/*
 !data/processed/mmlu_subset.jsonl
 data/splits/*
 !data/splits/.gitkeep
+# The actual split files MUST be committed (not just cached) — Colab clones the repo fresh for
+# every training run and has no way to regenerate the identical splits otherwise (real bug hit
+# on the first real Colab run: training failed with FileNotFoundError since these were never
+# committed, only their .gitkeep placeholder was).
+!data/splits/*.jsonl
 checkpoints/*
 !checkpoints/.gitkeep
 results/*
