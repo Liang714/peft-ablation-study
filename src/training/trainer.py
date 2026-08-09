@@ -3,6 +3,7 @@ ranks, QLoRA) — only configs/*.yaml differs between runs, not this code."""
 
 from __future__ import annotations
 
+import functools
 import logging
 import time
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any
 from src.config import ExperimentConfig
 from src.data.io import load_jsonl
 from src.training.budget import compute_max_steps
+from src.training.collator import sft_data_collator
 from src.training.dataset import build_tokenized_dataset
 from src.training.model_setup import build_model_for_training
 
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -> dict[str, Any]:
     import torch
-    from transformers import AutoTokenizer, DataCollatorForSeq2Seq, Trainer, TrainingArguments
+    from transformers import AutoTokenizer, Trainer, TrainingArguments
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.name, trust_remote_code=cfg.model.trust_remote_code)
     if tokenizer.pad_token_id is None:
@@ -45,6 +47,11 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
         )
         max_steps = max_steps_override
 
+    # warmup_ratio is deprecated (transformers warns it'll be removed in v5.2) — compute the
+    # equivalent warmup_steps explicitly instead, since requirements.txt doesn't pin an upper
+    # bound on transformers and Colab sessions can pick up whatever's current.
+    warmup_steps = round(cfg.training.warmup_ratio * max_steps)
+
     output_dir = Path(cfg.checkpoint_dir) / cfg.run_name
     training_args = TrainingArguments(
         output_dir=str(output_dir),
@@ -52,7 +59,7 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
         per_device_eval_batch_size=cfg.evaluation.batch_size,
         gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
         learning_rate=cfg.training.learning_rate,
-        warmup_ratio=cfg.training.warmup_ratio,
+        warmup_steps=warmup_steps,
         weight_decay=cfg.training.weight_decay,
         lr_scheduler_type=cfg.training.lr_scheduler_type,
         gradient_checkpointing=False,  # already enabled directly on the model in model_setup.py when requested
@@ -69,7 +76,7 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
         report_to=[],  # MLflow logging is handled explicitly by scripts/train.py, not via Trainer's own integration
     )
 
-    data_collator = DataCollatorForSeq2Seq(tokenizer, model=model, padding=True, label_pad_token_id=-100)
+    data_collator = functools.partial(sft_data_collator, pad_token_id=tokenizer.pad_token_id)
 
     trainer = Trainer(
         model=model,

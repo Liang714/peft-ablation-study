@@ -24,6 +24,7 @@ from src.config import (
     TrainingConfig,
 )
 from src.training.budget import compute_max_steps
+from src.training.collator import sft_data_collator
 from src.training.dataset import build_tokenized_dataset, tokenize_example
 
 
@@ -93,6 +94,38 @@ def test_build_tokenized_dataset_produces_expected_columns() -> None:
 
     assert len(ds) == 2
     assert set(ds.column_names) == {"input_ids", "attention_mask", "labels"}
+
+
+# --------------------------------------------------------------------------- #
+# sft_data_collator
+# --------------------------------------------------------------------------- #
+
+
+def test_sft_data_collator_pads_to_batch_max_length() -> None:
+    features = [
+        {"input_ids": [1, 2, 3], "attention_mask": [1, 1, 1], "labels": [-100, -100, 3]},
+        {"input_ids": [1, 2], "attention_mask": [1, 1], "labels": [-100, 2]},
+    ]
+    batch = sft_data_collator(features, pad_token_id=0)
+
+    assert batch["input_ids"].shape == (2, 3)
+    assert batch["attention_mask"].shape == (2, 3)
+    assert batch["labels"].shape == (2, 3)
+
+    assert batch["input_ids"][1].tolist() == [1, 2, 0]  # padded with pad_token_id
+    assert batch["attention_mask"][1].tolist() == [1, 1, 0]  # padded with 0 (not attended to)
+    assert batch["labels"][1].tolist() == [-100, 2, -100]  # padded with -100 (not trained on)
+
+
+def test_sft_data_collator_no_padding_needed_when_equal_length() -> None:
+    features = [
+        {"input_ids": [1, 2], "attention_mask": [1, 1], "labels": [-100, 2]},
+        {"input_ids": [3, 4], "attention_mask": [1, 1], "labels": [3, 4]},
+    ]
+    batch = sft_data_collator(features, pad_token_id=0)
+
+    assert batch["input_ids"].tolist() == [[1, 2], [3, 4]]
+    assert batch["labels"].tolist() == [[-100, 2], [3, 4]]
 
 
 # --------------------------------------------------------------------------- #
