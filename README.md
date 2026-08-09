@@ -110,7 +110,20 @@ PYTHONPATH=. python scripts/evaluate.py --config configs/full_finetune.yaml
   emitting an early stop token; MMLU scoring (single forward pass per question, no generation) took
   ~2 minutes. Fine-tuned checkpoints are expected to terminate answers more cleanly and should be
   noticeably faster to evaluate.
-- **Step 4:** Full fine-tuning run — pending.
+- **Step 4 (training pipeline built, real run pending on Colab):** `src/training/` (dataset
+  tokenization with prompt-masking, compute-budget→max_steps translation, model setup for all 3
+  methods, training orchestration) + `scripts/train.py`. Validated with local CPU dry-runs
+  (`--dry-run-max-steps N`, debug-only) for the `full_finetune` and `lora` code paths — confirmed
+  correct trainable-param counts (494M/494M for full fine-tune, 1.08M/495M=0.22% for LoRA r=8),
+  correct checkpoint save behavior (full `model.safetensors` vs. adapter-only ~4MB), and confirmed
+  the real compute budget resolves to **max_steps=471, epochs=3.0000 exactly** as designed. `qlora`
+  requires CUDA (bitsandbytes) and can't be dry-run locally.
+
+  **The actual training run happens on Colab** (locked compute-environment decision — this Mac has
+  no CUDA GPU): see `notebooks/colab_train.ipynb`. Re-run it once per method across Steps 4-6,
+  changing only the `CONFIG` variable; it trains, evaluates (task EM/F1 + MMLU), and pushes the
+  resulting `results/<run_name>_{train,eval}.json` back to this repo. Checkpoints stay gitignored
+  (Colab session storage only) — download manually if you need to keep one past the session.
 - **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending.
 - **Step 6:** QLoRA run — pending.
 - **Step 7:** Forgetting evaluation (every run, before/after) — pending.
