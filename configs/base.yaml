@@ -43,6 +43,16 @@ forgetting_eval:
   sampling_strategy: "stratified_all_subjects"   # ~2-3 questions per subject across all 57
   seed: 42
 
+evaluation:
+  device: "auto"        # picks cuda > mps > cpu. A local MPS test hung on this Mac (not
+                         # root-caused — may be this torch/transformers version combo), so
+                         # src/models/loader.py's "auto" resolution deliberately skips MPS and
+                         # falls back to cpu for now, which is fast enough for a 0.5B model
+                         # (verified: ~4s model load, <1s per generate() call).
+  max_new_tokens: 128    # covers the vast majority of Dolly closed_qa/information_extraction responses
+  do_sample: false       # greedy decoding — deterministic, reproducible eval
+  batch_size: 8
+
 logging:
   backend: "mlflow"       # local + free, no account needed
   experiment_name: "peft-ablation-study"

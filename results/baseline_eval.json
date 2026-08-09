@@ -1,0 +1,101 @@
+{
+  "run_name": "baseline",
+  "checkpoint": null,
+  "task_metrics": {
+    "em": 0.012738853503184714,
+    "f1": 0.2943269393662701,
+    "n": 314
+  },
+  "task_eval_seconds": 1567.9271879196167,
+  "sample_predictions": [
+    {
+      "instruction": "List the business verticals of Reliance Industries Limited as per the passage. Display the result as a dashed list.",
+      "gold": "energy\npetrochemicals\nnatural gas\nretail\ntelecommunications\nmass media\ntextiles",
+      "prediction": "Based on the information provided in the context, here is the list of business verticals of Reliance Industries Limited:\n\n1. Energy\n2. Petrochemicals\n3. Natural Gas\n4. Retail\n5. Telecommunications\n6. Mass Media\n7. Textiles\n\nThis list includes all the major business segments that Reliance Industries Limited operates in, along with some additional ones not explicitly mentioned in the given text."
+    },
+    {
+      "instruction": "Given this paragraph about hedgehogs, why are they different from porcupines?",
+      "gold": "Hedgehog spines do not easily detach rom their bodies like porcupines.",
+      "prediction": "Hedgehogs are different from porcupines in several key ways:\n\n1. **Spinal Structure**: Porcupines have quills that are sharp and barbed, while hedgehogs have spines that are hollow and not barbed.\n\n2. **Behavioral Characteristics**:\n   - **Quilling Behavior**: Hedgehogs typically don't shed their spines like porcupines do.\n   - **Disease and Stress Response**: Hedgehogs are more likely to lose their spines due to diseases or stress compared to porcupines, who may regrow them after injury or disease.\n\n3. **Coloration**:"
+    },
+    {
+      "instruction": "Given the following paragraph on gene regulation, what are operons and where do they occur?",
+      "gold": "Operons are clusters of genes that share the same promoter. They occur mainly in prokaryotes and some lower eukaryotes such as Caenorhabditis elegans.",
+      "prediction": "Operons are clusters of genes that share the same promoter. They occur primarily in prokaryotes and some lower eukaryotes, including bacteria like Caenorhabditis elegans. Operons are characterized by their shared promoter region, which is often located within the same gene family. This shared promoter region allows for coordinated transcriptional activity across multiple genes within the same operon. The presence of operons suggests a level of organization and control over gene expression that is characteristic of certain biological processes, particularly those involving transcription and translation."
+    },
+    {
+      "instruction": "What is the average lifespan of a Golden Retriever?",
+      "gold": "The average lifespan of a Golden Retriever is 12 to 13 years.",
+      "prediction": "The average lifespan of a Golden Retriever is typically around 12 to 13 years. However, it's important to note that individual Golden Retriever breeds can vary widely in their lifespans due to factors such as genetics, diet, exercise, and overall health. Responsible breeding practices help ensure that these dogs live longer and healthier lives."
+    },
+    {
+      "instruction": "How old is the Earth?",
+      "gold": "Earth is about 4.54 billion years old.",
+      "prediction": "The Earth is approximately 4.54 billion years old according to the geologic time scale proposed by Alfred Wegener. This age is based on observations of the distribution of fossils found across different regions of the world, which indicate that the continents were once connected during the early stages of Earth's history.\n\nTo put this into perspective:\n\n1. **Age of the Solar System**: The solar system was formed around 4.6 billion years ago.\n2. **Earth Formation**: The Earth itself formed around 4.54 billion years ago.\n3. **Continental Drift Theory**: The theory suggests that the continents were once connected"
+    }
+  ],
+  "mmlu": {
+    "accuracy": 0.3466666666666667,
+    "n": 150,
+    "per_subject_accuracy": {
+      "abstract_algebra": 0.3333333333333333,
+      "anatomy": 0.3333333333333333,
+      "astronomy": 0.6666666666666666,
+      "business_ethics": 0.5,
+      "clinical_knowledge": 0.5,
+      "college_biology": 0.6666666666666666,
+      "college_chemistry": 0.6666666666666666,
+      "college_computer_science": 0.0,
+      "college_mathematics": 0.3333333333333333,
+      "college_medicine": 0.0,
+      "college_physics": 0.3333333333333333,
+      "computer_security": 0.0,
+      "conceptual_physics": 0.3333333333333333,
+      "econometrics": 0.3333333333333333,
+      "electrical_engineering": 0.3333333333333333,
+      "elementary_mathematics": 0.3333333333333333,
+      "formal_logic": 0.5,
+      "global_facts": 0.0,
+      "high_school_biology": 0.3333333333333333,
+      "high_school_chemistry": 0.0,
+      "high_school_computer_science": 0.0,
+      "high_school_european_history": 0.0,
+      "high_school_geography": 0.6666666666666666,
+      "high_school_government_and_politics": 1.0,
+      "high_school_macroeconomics": 0.0,
+      "high_school_mathematics": 0.0,
+      "high_school_microeconomics": 0.3333333333333333,
+      "high_school_physics": 0.0,
+      "high_school_psychology": 0.6666666666666666,
+      "high_school_statistics": 0.0,
+      "high_school_us_history": 0.5,
+      "high_school_world_history": 0.5,
+      "human_aging": 0.3333333333333333,
+      "human_sexuality": 0.5,
+      "international_law": 0.3333333333333333,
+      "jurisprudence": 0.5,
+      "logical_fallacies": 0.5,
+      "machine_learning": 0.3333333333333333,
+      "management": 0.3333333333333333,
+      "marketing": 0.6666666666666666,
+      "medical_genetics": 0.3333333333333333,
+      "miscellaneous": 0.5,
+      "moral_disputes": 0.0,
+      "moral_scenarios": 0.0,
+      "nutrition": 0.0,
+      "philosophy": 0.0,
+      "prehistory": 0.3333333333333333,
+      "professional_accounting": 0.3333333333333333,
+      "professional_law": 0.5,
+      "professional_medicine": 0.6666666666666666,
+      "professional_psychology": 0.0,
+      "public_relations": 0.5,
+      "security_studies": 0.5,
+      "sociology": 0.6666666666666666,
+      "us_foreign_policy": 0.6666666666666666,
+      "virology": 0.5,
+      "world_religions": 0.6666666666666666
+    }
+  },
+  "mmlu_eval_seconds": 130.16155886650085
+}

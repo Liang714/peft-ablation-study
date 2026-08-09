@@ -11,12 +11,18 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 !data/processed/dataset_stats.json
+# The frozen MMLU forgetting-benchmark subset MUST be committed (not just
+# cached) — every fine-tuning run's before/after forgetting eval (Step 7)
+# needs the identical set of questions, not a freshly-resampled one.
+!data/processed/mmlu_subset.jsonl
 data/splits/*
 !data/splits/.gitkeep
 checkpoints/*
 !checkpoints/.gitkeep
 results/*
 !results/.gitkeep
+# Per-run metrics + sample predictions JSON — small, and the whole point of the project's logged record.
+!results/*.json
 
 # Experiment tracking
 mlruns/

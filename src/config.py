@@ -117,6 +117,14 @@ class TrainingConfig:
 
 
 @dataclass
+class EvalConfig:
+    device: str = "auto"  # "auto" | "cpu" | "cuda" | "mps"
+    max_new_tokens: int = 128
+    do_sample: bool = False  # greedy decoding — deterministic, reproducible eval
+    batch_size: int = 8
+
+
+@dataclass
 class LoggingConfig:
     backend: str = "mlflow"  # local, free — no account needed (see project memory: $0 tooling)
     experiment_name: str = "peft-ablation-study"
@@ -135,6 +143,7 @@ class ExperimentConfig:
     quantization: QuantizationConfig
     compute_budget: ComputeBudgetConfig
     forgetting_eval: ForgettingEvalConfig
+    evaluation: EvalConfig
     logging: LoggingConfig
     checkpoint_dir: str
     results_dir: str
@@ -221,6 +230,7 @@ def load_config(method_config_path: str | Path, base_config_path: str | Path = B
             quantization=_build_dataclass(QuantizationConfig, merged.get("quantization", {}), "quantization"),
             compute_budget=_build_dataclass(ComputeBudgetConfig, merged["compute_budget"], "compute_budget"),
             forgetting_eval=_build_dataclass(ForgettingEvalConfig, merged["forgetting_eval"], "forgetting_eval"),
+            evaluation=_build_dataclass(EvalConfig, merged.get("evaluation", {}), "evaluation"),
             logging=_build_dataclass(LoggingConfig, merged.get("logging", {}), "logging"),
             checkpoint_dir=merged["checkpoint_dir"],
             results_dir=merged["results_dir"],

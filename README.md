@@ -4,7 +4,7 @@ A controlled, reproducible comparison of full fine-tuning, LoRA (rank sweep), an
 on a domain instruction/QA task under a **fixed compute budget**, measuring task
 accuracy, catastrophic forgetting, training cost, and inference latency/memory.
 
-> Status: Step 2 (data pipeline) complete. This README grows with each build step;
+> Status: Step 3 (baseline eval) complete. This README grows with each build step;
 > the full write-up (methodology, results, plots, limitations) is finalized in Step 10.
 
 ## Locked decisions
@@ -33,10 +33,16 @@ in training/eval scripts.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest  # should pass: config-loading + data-pipeline tests (22 as of Step 2)
+# If a source build fails (e.g. `cryptography` needing a Rust toolchain — happens when the
+# venv's Python is x86_64 running under Rosetta on Apple Silicon, check with
+# `file $(which python3)`), retry with: pip install --only-binary :all: -r requirements.txt
+pytest  # should pass: config-loading + data-pipeline + evaluation-metric tests (37 as of Step 3)
 
 # Regenerate data/splits/*.jsonl + data/processed/dataset_stats.json from scratch:
 PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml
+
+# Baseline (zero-shot) eval — task EM/F1 + MMLU forgetting benchmark:
+PYTHONPATH=. python scripts/evaluate.py --config configs/full_finetune.yaml
 ```
 
 ## Build log
@@ -72,7 +78,38 @@ PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml
   future refactors. Long examples are dropped rather than truncated to avoid corrupting the training
   signal (see the max_seq_len row above). Regenerate everything with:
   `PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml`.
-- **Step 3:** Baseline (no fine-tuning) eval — pending.
+- **Step 3 (done):** Baseline (no fine-tuning) eval — zero-shot `Qwen/Qwen2.5-0.5B-Instruct`,
+  greedy decoding, run via `PYTHONPATH=. python scripts/evaluate.py --config configs/full_finetune.yaml`
+  (no `--checkpoint` → base model). Full results: `results/baseline_eval.json`; MLflow run
+  `baseline` under experiment `peft-ablation-study` (`mlruns/`, local).
+
+  **This is the reference point every fine-tuning run in Steps 4-6 is measured against:**
+
+  | Metric | Score |
+  |---|---|
+  | Task EM (test, n=314) | 1.27% |
+  | Task F1 (test, n=314) | 29.43% |
+  | MMLU accuracy (forgetting benchmark, n=150) | 34.67% |
+
+  EM is near-zero despite F1 being meaningfully higher — expected for a zero-shot instruct model on
+  this task: it answers in full, hedged sentences ("Based on the information provided...") rather than
+  the terse, extractive phrasing of the Dolly gold answers, so exact string match rarely hits even when
+  the content is substantively correct (see `results/baseline_eval.json`'s `sample_predictions` for
+  concrete examples). This gap — and whether fine-tuning closes it — is itself one of the things Steps
+  4-6 will show. MMLU=34.67% is modestly above the 25% random-guess floor for 4-choice questions,
+  consistent with a 0.5B model's limited general knowledge; this is the number every future run's
+  post-fine-tuning MMLU score gets subtracted from to compute the forgetting delta (Step 7).
+
+  The fixed 150-question MMLU subset was sampled once here and cached to
+  `data/processed/mmlu_subset.jsonl` (committed to git, not just cached locally) — every future
+  before/after forgetting eval reuses this exact file so the delta is meaningful.
+
+  One implementation note worth recording: greedy `generate()` on the 314-example test set took
+  ~26 minutes on this machine's CPU (Rosetta-emulated x86_64 Python on Apple Silicon — see Setup
+  note below) because many zero-shot completions ran to the full `max_new_tokens=128` budget without
+  emitting an early stop token; MMLU scoring (single forward pass per question, no generation) took
+  ~2 minutes. Fine-tuned checkpoints are expected to terminate answers more cleanly and should be
+  noticeably faster to evaluate.
 - **Step 4:** Full fine-tuning run — pending.
 - **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending.
 - **Step 6:** QLoRA run — pending.
