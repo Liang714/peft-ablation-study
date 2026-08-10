@@ -1,0 +1,101 @@
+{
+  "run_name": "full_finetune",
+  "checkpoint": "checkpoints/full_finetune",
+  "task_metrics": {
+    "em": 0.09554140127388536,
+    "f1": 0.5130236570664591,
+    "n": 314
+  },
+  "task_eval_seconds": 269.18794560432434,
+  "sample_predictions": [
+    {
+      "instruction": "List the business verticals of Reliance Industries Limited as per the passage. Display the result as a dashed list.",
+      "gold": "energy\npetrochemicals\nnatural gas\nretail\ntelecommunications\nmass media\ntextiles",
+      "prediction": "Energy, petrochemicals, natural gas, retail, telecommunications, mass media, textiles"
+    },
+    {
+      "instruction": "Given this paragraph about hedgehogs, why are they different from porcupines?",
+      "gold": "Hedgehog spines do not easily detach rom their bodies like porcupines.",
+      "prediction": "Porcupines have quills that are barbed and sharp while hedgehogs have spines that are hollow and non-barbed."
+    },
+    {
+      "instruction": "Given the following paragraph on gene regulation, what are operons and where do they occur?",
+      "gold": "Operons are clusters of genes that share the same promoter. They occur mainly in prokaryotes and some lower eukaryotes such as Caenorhabditis elegans.",
+      "prediction": "Operons are clusters of genes that share the same promoter. Operons are primarily found in prokaryotes and some lower eukaryotes (e.g., Caenorhabditis elegans)."
+    },
+    {
+      "instruction": "What is the average lifespan of a Golden Retriever?",
+      "gold": "The average lifespan of a Golden Retriever is 12 to 13 years.",
+      "prediction": "The average lifespan of a Golden Retriever is 12 to 13 years."
+    },
+    {
+      "instruction": "How old is the Earth?",
+      "gold": "Earth is about 4.54 billion years old.",
+      "prediction": "The Earth has existed for about 4.54 billion years."
+    }
+  ],
+  "mmlu": {
+    "accuracy": 0.4,
+    "n": 150,
+    "per_subject_accuracy": {
+      "abstract_algebra": 0.3333333333333333,
+      "anatomy": 0.3333333333333333,
+      "astronomy": 0.3333333333333333,
+      "business_ethics": 0.0,
+      "clinical_knowledge": 0.5,
+      "college_biology": 0.6666666666666666,
+      "college_chemistry": 0.3333333333333333,
+      "college_computer_science": 0.0,
+      "college_mathematics": 0.0,
+      "college_medicine": 0.5,
+      "college_physics": 0.3333333333333333,
+      "computer_security": 0.5,
+      "conceptual_physics": 0.3333333333333333,
+      "econometrics": 0.3333333333333333,
+      "electrical_engineering": 0.3333333333333333,
+      "elementary_mathematics": 0.3333333333333333,
+      "formal_logic": 0.5,
+      "global_facts": 0.0,
+      "high_school_biology": 0.3333333333333333,
+      "high_school_chemistry": 0.5,
+      "high_school_computer_science": 0.0,
+      "high_school_european_history": 1.0,
+      "high_school_geography": 1.0,
+      "high_school_government_and_politics": 1.0,
+      "high_school_macroeconomics": 0.0,
+      "high_school_mathematics": 0.0,
+      "high_school_microeconomics": 0.3333333333333333,
+      "high_school_physics": 0.0,
+      "high_school_psychology": 0.6666666666666666,
+      "high_school_statistics": 0.0,
+      "high_school_us_history": 1.0,
+      "high_school_world_history": 0.5,
+      "human_aging": 0.3333333333333333,
+      "human_sexuality": 1.0,
+      "international_law": 0.6666666666666666,
+      "jurisprudence": 0.5,
+      "logical_fallacies": 0.5,
+      "machine_learning": 0.0,
+      "management": 0.3333333333333333,
+      "marketing": 0.6666666666666666,
+      "medical_genetics": 0.3333333333333333,
+      "miscellaneous": 0.5,
+      "moral_disputes": 0.3333333333333333,
+      "moral_scenarios": 0.0,
+      "nutrition": 0.0,
+      "philosophy": 0.5,
+      "prehistory": 1.0,
+      "professional_accounting": 0.6666666666666666,
+      "professional_law": 0.0,
+      "professional_medicine": 0.6666666666666666,
+      "professional_psychology": 0.3333333333333333,
+      "public_relations": 0.5,
+      "security_studies": 0.0,
+      "sociology": 0.6666666666666666,
+      "us_foreign_policy": 0.6666666666666666,
+      "virology": 0.5,
+      "world_religions": 0.6666666666666666
+    }
+  },
+  "mmlu_eval_seconds": 13.802014827728271
+}

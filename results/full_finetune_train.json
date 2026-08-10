@@ -1,0 +1,14 @@
+{
+  "run_name": "full_finetune",
+  "method": "full_finetune",
+  "checkpoint_path": "checkpoints/full_finetune",
+  "device": "cuda",
+  "max_steps": 471,
+  "epochs_equivalent": 3.0,
+  "wall_clock_seconds": 7420.189782381058,
+  "peak_memory_mb": 11604.747264,
+  "train_loss": 0.8761278689540369,
+  "val_loss": 0.962174117565155,
+  "n_train_examples": 2506,
+  "n_val_examples": 313
+}
