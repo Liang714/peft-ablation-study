@@ -52,11 +52,27 @@ def run_training(cfg: ExperimentConfig, max_steps_override: int | None = None) -
     # bound on transformers and Colab sessions can pick up whatever's current.
     warmup_steps = round(cfg.training.warmup_ratio * max_steps)
 
+    # Real CUDA OOM hit here on Colab's T4: per_device_eval_batch_size defaulted to
+    # cfg.evaluation.batch_size (8), DOUBLE the train batch size (4) — Qwen2.5's ~152k
+    # vocabulary means the eval-loss cross-entropy computation materializes a
+    # (batch*seq_len, vocab_size) logits tensor, so a larger eval batch can need MORE peak
+    # memory than train despite skipping the backward pass. Cap it at whatever train batch
+    # size already proved fits, rather than trust the eval config value blindly here.
+    eval_batch_size = min(cfg.evaluation.batch_size, cfg.training.per_device_train_batch_size)
+    if eval_batch_size != cfg.evaluation.batch_size:
+        logger.info(
+            "Capping in-training eval batch size to %d (train batch size) instead of "
+            "cfg.evaluation.batch_size=%d, to avoid OOM on the eval-loss computation's "
+            "(batch*seq_len, vocab_size) logits tensor.",
+            eval_batch_size,
+            cfg.evaluation.batch_size,
+        )
+
     output_dir = Path(cfg.checkpoint_dir) / cfg.run_name
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         per_device_train_batch_size=cfg.training.per_device_train_batch_size,
-        per_device_eval_batch_size=cfg.evaluation.batch_size,
+        per_device_eval_batch_size=eval_batch_size,
         gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
         learning_rate=cfg.training.learning_rate,
         warmup_steps=warmup_steps,

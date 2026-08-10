@@ -10,6 +10,14 @@ comparison on top of both).
 
 from __future__ import annotations
 
+import os
+
+# Set BEFORE any torch import anywhere (including transitively) — must be in place before the
+# first CUDA allocation to have any effect. Suggested directly by a real CUDA OOM error hit on
+# Colab's T4; reduces allocator fragmentation, doesn't fix a genuinely-too-large batch size but
+# gives real margin back on borderline cases.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import json
 import logging

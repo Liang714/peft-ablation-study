@@ -7,6 +7,13 @@ run's before/after forgetting eval (Step 7) and final task eval.
 
 from __future__ import annotations
 
+import os
+
+# Set BEFORE any torch import anywhere (including transitively) — see scripts/train.py's identical
+# note for why. Cheap, harmless defensive measure here even though this script's generation-based
+# eval is a lighter memory profile than training's loss-over-full-vocab computation.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import json
 import logging
