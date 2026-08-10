@@ -4,7 +4,7 @@ A controlled, reproducible comparison of full fine-tuning, LoRA (rank sweep), an
 on a domain instruction/QA task under a **fixed compute budget**, measuring task
 accuracy, catastrophic forgetting, training cost, and inference latency/memory.
 
-> Status: Step 3 (baseline eval) complete. This README grows with each build step;
+> Status: Step 4 (full fine-tuning) complete. This README grows with each build step;
 > the full write-up (methodology, results, plots, limitations) is finalized in Step 10.
 
 ## Locked decisions
@@ -120,20 +120,41 @@ PYTHONPATH=. python scripts/evaluate.py --config configs/full_finetune.yaml
   emitting an early stop token; MMLU scoring (single forward pass per question, no generation) took
   ~2 minutes. Fine-tuned checkpoints are expected to terminate answers more cleanly and should be
   noticeably faster to evaluate.
-- **Step 4 (training pipeline built, real run pending on Colab):** `src/training/` (dataset
-  tokenization with prompt-masking, compute-budget→max_steps translation, model setup for all 3
-  methods, training orchestration) + `scripts/train.py`. Validated with local CPU dry-runs
-  (`--dry-run-max-steps N`, debug-only) for the `full_finetune` and `lora` code paths — confirmed
-  correct trainable-param counts (494M/494M for full fine-tune, 1.08M/495M=0.22% for LoRA r=8),
-  correct checkpoint save behavior (full `model.safetensors` vs. adapter-only ~4MB), and confirmed
-  the real compute budget resolves to **max_steps=471, epochs=3.0000 exactly** as designed. `qlora`
-  requires CUDA (bitsandbytes) and can't be dry-run locally.
+- **Step 4 (done):** Full fine-tuning, trained on Colab (T4 GPU) via `notebooks/colab_train.ipynb`
+  — `src/training/` (dataset tokenization with prompt-masking, compute-budget→max_steps
+  translation, model setup for all 3 methods, training orchestration) + `scripts/train.py`.
+  Full results: `results/full_finetune_{train,eval}.json`.
 
-  **The actual training run happens on Colab** (locked compute-environment decision — this Mac has
-  no CUDA GPU): see `notebooks/colab_train.ipynb`. Re-run it once per method across Steps 4-6,
-  changing only the `CONFIG` variable; it trains, evaluates (task EM/F1 + MMLU), and pushes the
-  resulting `results/<run_name>_{train,eval}.json` back to this repo. Checkpoints stay gitignored
-  (Colab session storage only) — download manually if you need to keep one past the session.
+  | Metric | Baseline (Step 3) | Full fine-tune | Δ |
+  |---|---|---|---|
+  | Task EM (test, n=314) | 1.27% | **9.55%** | +8.28 pts |
+  | Task F1 (test, n=314) | 29.43% | **51.30%** | +21.87 pts |
+  | MMLU accuracy (n=150) | 34.67% | **40.00%** | +5.33 pts |
+  | Training wall-clock | — | 7,420s (≈2.06 hrs) | — |
+  | Peak GPU memory | — | 11,605 MB / 14,564 MB (T4) | — |
+
+  Fine-tuning substantially improved task performance — sample predictions show the model now
+  answers concisely in the gold answers' terse style instead of the zero-shot baseline's hedged
+  full sentences (see `results/full_finetune_eval.json`'s `sample_predictions`), which is most of
+  why F1 jumped >20 points and EM nearly 8x'd. **No catastrophic forgetting observed at this
+  compute budget** — MMLU accuracy did not drop (a small +5.33pt increase, plausibly partly noise
+  at n=150, but a genuine, non-negative data point). Peak memory (11.6GB/14.6GB) confirms the
+  compute-budget/model-size choices from Step 1 were right-sized for a single free-tier T4.
+
+  Getting this real run working end-to-end surfaced (and fixed) 6 real bugs invisible to local
+  CPU-only testing: a checkpoint-loading code path that assumed every checkpoint was a LoRA
+  adapter, `data/splits/*.jsonl` never actually being committed to git (worked locally, broke on
+  a fresh Colab clone), a Colab-transformers-version-specific data-collator crash, an entire
+  unpinned-dependency-version-drift class of bugs (fixed by pinning the whole ML stack exactly),
+  bf16 being assumed safe on any CUDA device when Colab's free-tier T4 (Turing) doesn't support it
+  in hardware, and a CUDA OOM from the in-training eval batch size exceeding the train batch size.
+  All fixed and covered by tests where the bug was in pure logic (see git log for the full story) —
+  worth recording since none of these were about the research methodology being wrong, all were
+  local-dev-environment-vs-Colab-environment friction.
+
+  **Re-run with:** open `notebooks/colab_train.ipynb` in Colab (GPU runtime), `CONFIG =
+  "configs/full_finetune.yaml"`, `Runtime > Run all`. Checkpoints stay gitignored (Colab session
+  storage only) — download manually if you need to keep one past the session.
 - **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending.
 - **Step 6:** QLoRA run — pending.
 - **Step 7:** Forgetting evaluation (every run, before/after) — pending.
