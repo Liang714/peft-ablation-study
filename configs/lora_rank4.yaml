@@ -6,8 +6,13 @@ run_name: "lora_rank4"
 training:
   method: "lora"
   learning_rate: 2.0e-4
-  per_device_train_batch_size: 8
-  gradient_accumulation_steps: 2
+  # per_device_train_batch_size=4 / grad_accum=4 matches full_finetune's config exactly (real
+  # CUDA OOM hit at batch=8 on Colab's T4: the frozen base model still runs a full forward/backward
+  # for every sequence in the batch regardless of how few params are trainable, and Qwen2.5's ~152k
+  # vocab makes that expensive). effective_batch_size stays 16, so max_steps/compute budget is
+  # unaffected — this only changes the per-device/accumulation split, not the research methodology.
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
 
 lora:
   enabled: true

@@ -8,8 +8,13 @@ run_name: "qlora"
 training:
   method: "qlora"
   learning_rate: 2.0e-4
-  per_device_train_batch_size: 8
-  gradient_accumulation_steps: 2
+  # per_device_train_batch_size=4 / grad_accum=4 matches full_finetune's config exactly (real
+  # CUDA OOM hit at batch=8 for LoRA on Colab's T4 — the frozen/quantized base model still runs
+  # a full forward/backward for every sequence in the batch, and Qwen2.5's ~152k vocab makes that
+  # expensive regardless of how few params are trainable or how the base is quantized).
+  # effective_batch_size stays 16, so max_steps/compute budget is unaffected.
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
 
 lora:
   enabled: true
