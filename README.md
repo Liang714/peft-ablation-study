@@ -4,8 +4,58 @@ A controlled, reproducible comparison of full fine-tuning, LoRA (rank sweep), an
 on a domain instruction/QA task under a **fixed compute budget**, measuring task
 accuracy, catastrophic forgetting, training cost, and inference latency/memory.
 
-> Status: Step 4 (full fine-tuning) complete. This README grows with each build step;
-> the full write-up (methodology, results, plots, limitations) is finalized in Step 10.
+**Status (October 2026):** the baseline and the full fine-tuning run are done and reported
+below. The LoRA rank sweep and QLoRA run have **no results yet**: the first LoRA attempt on a
+Colab T4 ran out of GPU memory, and the batch-size fix is committed, but no LoRA results are
+in the repository. So the
+study's main question, how the three methods compare, is still open.
+
+## Summary
+
+| | |
+|---|---|
+| **Question** | At the same training budget, how do full fine-tuning, LoRA (ranks 4, 8, 16, 32) and QLoRA compare in task accuracy, forgetting, training cost and inference cost? |
+| **Model** | `Qwen/Qwen2.5-0.5B-Instruct`, small enough for full fine-tuning on one free T4 GPU |
+| **Task** | Dolly-15k, `closed_qa` and `information_extraction` only (3,133 examples after cleaning; 2,506 / 313 / 314 split) |
+| **Forgetting check** | A fixed 150-question MMLU subset, stratified over all 57 subjects, scored before and after every run |
+| **Fixed budget** | 2,383,278 training tokens per run (3 epochs), identical for every method |
+| **Cost** | $0: free Colab/Kaggle GPUs |
+
+### Results so far (one run, one seed)
+
+| Metric | Baseline (no fine-tuning) | Full fine-tuning | LoRA / QLoRA |
+|---|---|---|---|
+| Task F1 (test, n=314) | 29.43% | **51.30%** | not run yet |
+| Task exact match (test, n=314) | 1.27% | **9.55%** | not run yet |
+| MMLU subset (n=150) | 34.67% | 40.00% | not run yet |
+| Training time / peak GPU memory | — | 2.06 h / 11.6 of 14.6 GB | not run yet |
+
+How to read this: fine-tuning mostly taught the model to answer in the short, extractive style
+of the gold answers (see `sample_predictions` in `results/*.json`). The MMLU rise is within the
+noise of 150 questions (roughly ±8 points), so it only says that no large forgetting appeared.
+With a single seed, no variance is measured yet.
+
+Running on a real GPU surfaced six bugs that local CPU tests had missed; they are described
+under Step 4 below.
+
+### Why this study
+
+Many personalization methods fully fine-tune a small model, for example the per-user checklist
+generator in P-Check ([Seo and Lee, ACL 2026](https://arxiv.org/abs/2601.02986)), which fully
+fine-tunes Llama-3.2-3B. This study builds the controlled set-up needed to ask whether LoRA or
+QLoRA can match full fine-tuning at the same budget, which decides whether such methods can run
+on free hardware. A related experiment on P-Check is in
+[pcheck-multilingual](https://github.com/Liang714/pcheck-multilingual).
+
+## Quick start
+
+```bash
+pip install -r requirements-tracking.txt && pip install -r requirements.txt   # see Setup for why two commands
+pytest
+# Train and evaluate on a GPU: open notebooks/colab_train.ipynb in Colab, set CONFIG, Run all.
+```
+
+The sections below are the full build log, written as each step was done.
 
 ## Locked decisions
 
@@ -46,7 +96,7 @@ pip install -r requirements.txt
 # requirements-gpu.txt (bitsandbytes, for QLoRA/Step 6 only) is CUDA-only — install it in addition
 # ONLY on a real GPU machine (Colab/Kaggle), never here (no macOS wheels exist, it'll fail).
 
-pytest  # should pass: config-loading + data-pipeline + evaluation-metric + training-pipeline tests (50 as of Step 4)
+pytest  # config-loading, data-pipeline, evaluation-metric and training-pipeline tests
 
 # Regenerate data/splits/*.jsonl + data/processed/dataset_stats.json from scratch:
 PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml
@@ -155,7 +205,9 @@ PYTHONPATH=. python scripts/evaluate.py --config configs/full_finetune.yaml
   **Re-run with:** open `notebooks/colab_train.ipynb` in Colab (GPU runtime), `CONFIG =
   "configs/full_finetune.yaml"`, `Runtime > Run all`. Checkpoints stay gitignored (Colab session
   storage only) — download manually if you need to keep one past the session.
-- **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending.
+- **Step 5:** LoRA rank sweep [4, 8, 16, 32] — pending. The first rank-8 attempt hit a CUDA
+  out-of-memory error at step 22/471; every config now uses the batch split proven safe in Step 4
+  (per-device batch 4 × 4 accumulation steps = effective batch 16, so the budget is unchanged).
 - **Step 6:** QLoRA run — pending.
 - **Step 7:** Forgetting evaluation (every run, before/after) — pending.
 - **Step 8:** Results aggregation (summary table + plot) — pending.
