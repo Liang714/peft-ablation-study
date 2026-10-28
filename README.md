@@ -96,7 +96,8 @@ pip install -r requirements.txt
 # requirements-gpu.txt (bitsandbytes, for QLoRA/Step 6 only) is CUDA-only — install it in addition
 # ONLY on a real GPU machine (Colab/Kaggle), never here (no macOS wheels exist, it'll fail).
 
-pytest  # config-loading, data-pipeline, evaluation-metric and training-pipeline tests
+ruff check src scripts tests
+pytest  # 53 tests: config, data pipeline (incl. leakage), metrics and training set-up; CPU only
 
 # Regenerate data/splits/*.jsonl + data/processed/dataset_stats.json from scratch:
 PYTHONPATH=. python scripts/prepare_data.py --config configs/lora_rank8.yaml

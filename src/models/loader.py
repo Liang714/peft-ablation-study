@@ -77,7 +77,6 @@ def load_model_and_tokenizer(
     Returns:
         (model, tokenizer, device)
     """
-    import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     device = resolve_device(cfg.evaluation.device)

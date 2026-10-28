@@ -88,7 +88,7 @@ def main() -> None:
         # Keep a few example predictions for qualitative sanity-checking (not just aggregate numbers).
         results["sample_predictions"] = [
             {"instruction": ex["instruction"], "gold": ex["response"], "prediction": pred}
-            for ex, pred in list(zip(test_examples, predictions))[:5]
+            for ex, pred in list(zip(test_examples, predictions, strict=True))[:5]
         ]
 
     mmlu_cache_path = Path(cfg.data.processed_dir) / "mmlu_subset.jsonl"

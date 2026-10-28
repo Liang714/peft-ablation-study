@@ -59,8 +59,8 @@ def compute_em_f1(predictions: list[str], golds: list[str]) -> dict[str, float]:
     if not predictions:
         raise ValueError("cannot compute metrics over an empty list")
 
-    ems = [exact_match_score(p, g) for p, g in zip(predictions, golds)]
-    f1s = [f1_score(p, g) for p, g in zip(predictions, golds)]
+    ems = [exact_match_score(p, g) for p, g in zip(predictions, golds, strict=True)]
+    f1s = [f1_score(p, g) for p, g in zip(predictions, golds, strict=True)]
     return {
         "em": sum(ems) / len(ems),
         "f1": sum(f1s) / len(f1s),

@@ -90,7 +90,7 @@ def load_mmlu_subset(cfg: ForgettingEvalConfig, cache_path: str | Path) -> list[
 
 def format_mmlu_prompt(example: dict) -> str:
     lines = [example["question"].strip()]
-    for letter, choice in zip(LETTERS, example["choices"]):
+    for letter, choice in zip(LETTERS, example["choices"], strict=True):
         lines.append(f"{letter}. {choice}")
     lines.append("Answer:")
     return "\n".join(lines)
