@@ -1,0 +1,6 @@
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "B"]
+# Long explanatory strings and comments are kept on one line.
+ignore = ["E501"]

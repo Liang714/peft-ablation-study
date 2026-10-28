@@ -49,7 +49,7 @@ def build_tokenized_dataset(examples: list[dict], tokenizer, max_seq_len: int):
     from datasets import Dataset
 
     tokenized = [tokenize_example(ex, tokenizer, max_seq_len) for ex in examples]
-    n_masked_fully = sum(1 for t in tokenized if all(l == -100 for l in t["labels"]))
+    n_masked_fully = sum(1 for t in tokenized if all(label == -100 for label in t["labels"]))
     if n_masked_fully:
         logger.warning(
             "%d/%d examples have ALL labels masked (empty response after truncation) — "
